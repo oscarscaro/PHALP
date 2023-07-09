@@ -63,6 +63,9 @@ class PHALP(nn.Module):
         # train or eval
         self.train() if(self.cfg.train) else self.eval()
         
+
+    ### Set-up
+        
     def setup_hmr(self):
         log.info("Loading HMR model...")
         self.HMAR       = HMAR(self.cfg)
@@ -90,6 +93,8 @@ class PHALP(nn.Module):
         log.info("Setting up Visualizer...")
         self.visualizer = Visualizer(self.cfg, self.HMAR)
         
+
+
     def track(self):
         
         eval_keys       = ['tracked_ids', 'tracked_bbox', 'tid', 'bbox', 'tracked_time']
@@ -511,7 +516,7 @@ class PHALP(nn.Module):
                 if(ft_==0): video_file = cv2.VideoWriter(video_tmp_name, cv2.VideoWriter_fourcc(*'mp4v'), 24, frameSize=(im_.shape[1], im_.shape[0]))
                 video_file.write(im_)
             video_file.release()
-            try:    scene_list = detect(video_tmp_name, AdaptiveDetector())
+            try:    scene_list = detect(video_tmp_name, AdaptiveDetector()) ## shot detector to detect essentially change of scenes (change of angles)
             except: pass
             os.system("rm " + video_tmp_name)
             for scene in scene_list:

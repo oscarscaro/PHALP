@@ -43,9 +43,9 @@ class Track:
         self._max_age          = max_age
         
         if(dims is not None):
-            self.A_dim = dims[0]
-            self.P_dim = dims[1]
-            self.L_dim = dims[2]
+            self.A_dim = dims[0] ## Apperance
+            self.P_dim = dims[1] ## Pose
+            self.L_dim = dims[2] ## Location
         
         self.track_data        = {"history": deque(maxlen=self.cfg.phalp.track_history) , "prediction":{}}
         for _ in range(self.cfg.phalp.track_history):
@@ -71,7 +71,8 @@ class Track:
 
     def update(self, detection, detection_id, shot):             
 
-        self.track_data["history"].append(copy.deepcopy(detection.detection_data))
+        self.track_data["history"].append(copy.deepcopy(detection.detection_data)) ## here the detection_data should be the predicted, latest detection at frame t_(i+1).
+        # Guess: if there is shot changes? update every location of the previous tracklet's location to the current one.
         if(shot==1): 
             for tx in range(self.cfg.phalp.track_history):
                 self.track_data["history"][-1-tx]['loca'] = copy.deepcopy(detection.detection_data['loca'])

@@ -62,8 +62,8 @@ class Tracker:
         """Propagate track state distributions one time step forward.
         This function should be called once every time step, before `update`.
         """
-        for track in self.tracks:
-            track.predict(self.phalp_tracker, increase_age=True)
+        for track in self.tracks: ## for each tracklets in the current track list
+            track.predict(self.phalp_tracker, increase_age=True) ## predict the next tracklet
 
     def update(self, detections, frame_t, image_name, shot):
         """Perform measurement update and track management.
@@ -109,8 +109,9 @@ class Tracker:
         
     def _match(self, detections):
 
+        # Metrics to the descriptors
         def gated_metric(tracks, dets, track_indices, detection_indices):
-            appe_emb          = np.array([dets[i].detection_data['appe'] for i in detection_indices])
+            appe_emb          = np.array([dets[i].detection_data['appe'] for i in detection_indices]) ## obtain a np.array(matrix) for apperance for every detections, app_emb[i] denotes apperance values with resepct to ith detection
             loca_emb          = np.array([dets[i].detection_data['loca'] for i in detection_indices])
             pose_emb          = np.array([dets[i].detection_data['pose'] for i in detection_indices])
             uv_maps           = np.array([dets[i].detection_data['uv'] for i in detection_indices])
@@ -126,6 +127,7 @@ class Tracker:
         matches, unmatched_tracks, unmatched_detections, cost_matrix = linear_assignment.matching_simple(gated_metric, self.metric.matching_threshold, self.max_age, self.tracks, detections, confirmed_tracks)
 
 
+        # tracks has the id in the keys, and actual content in the elements w.r.t that key.
         track_gt   = [t.track_data['history'][-1]['ground_truth'] for i, t in enumerate(self.tracks) if t.is_confirmed() or t.is_tentative()]
         detect_gt  = [d.detection_data['ground_truth'] for i, d in enumerate(detections)]
 
@@ -154,6 +156,7 @@ class Tracker:
         self.tracks.append(new_track)
         self._next_id += 1
 
+    # Only the pose and location is accumlated, not the apperance.
     def accumulate_vectors(self, track_ids, features="APL"):
         
         a_features = []; p_features = []; l_features = []; t_features = []; l_time     = []; confidence = []; is_tracks  = 0; p_data = []
