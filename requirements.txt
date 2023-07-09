@@ -1,0 +1,18 @@
+pyrender
+opencv-python
+joblib
+cython
+scikit-learn==0.22
+scikit-image
+git+https://github.com/facebookresearch/detectron2.git
+git+https://github.com/pytube/pytube.git
+git+https://github.com/JonathonLuiten/TrackEval.git
+git+https://github.com/mmatl/pyopengl.git
+pip install git+https://github.com/brjathu/NMR.git
+pip install chumpy
+pip install ipython
+pip install gdown
+pip install dill
+pip install scenedetect[opencv]
+pip install rich motmetrics hydra-score hydra-colorlog omegaconf
+pip install submitit pyrootutils pycocotools colordict smplx==0.1.28

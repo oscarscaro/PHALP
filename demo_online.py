@@ -143,7 +143,11 @@ def test_tracker(opt, phalp_tracker: PHALP_tracker):
         
     except Exception as e: 
         print(e)
-        print(traceback.format_exc())     
+        print(traceback.format_exc())    
+        
+    ## Return tracker for further processing
+    ## Return Type: Tracker
+    return tracker
 
 
 class options():
