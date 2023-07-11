@@ -100,7 +100,7 @@ class Tracker:
             uv_maps       += [track.track_data['prediction']['uv'][-1]]
             targets       += [track.track_id]
             
-            
+        ## here metric is the nn_matching, which employes hungarian method to perform association
         self.metric.partial_fit(np.asarray(appe_features), np.asarray(loca_features), np.asarray(pose_features), np.asarray(uv_maps), np.asarray(targets), active_targets)
         
         return matches

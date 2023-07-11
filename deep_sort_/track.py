@@ -70,6 +70,7 @@ class Track:
     def update(self, detection, detection_id, shot):             
 
         self.track_data["history"].append(copy.deepcopy(detection.detection_data))
+        ## If shot changes detected
         if(shot==1): 
             for tx in range(self.opt.track_history):
                 self.track_data["history"][-1-tx]['loca'] = copy.deepcopy(detection.detection_data['loca'])

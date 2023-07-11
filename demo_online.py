@@ -45,18 +45,19 @@ def test_tracker(opt, phalp_tracker: PHALP_tracker):
     phalp_tracker.HMAR.reset_nmr(opt.res)    
     
     metric  = nn_matching.NearestNeighborDistanceMetric(opt, opt.hungarian_th, opt.past_lookback)
-    tracker = Tracker(opt, metric, max_age=opt.max_age_track, n_init=opt.n_init, phalp_tracker=phalp_tracker, dims=[4096, 4096, 99])  
+    tracker = Tracker(opt, metric, max_age=opt.max_age_track, n_init=opt.n_init, phalp_tracker=phalp_tracker, dims=[4096, 4096, 99])  ## dimension of apperance, pose, and location. 
         
     try: 
         
         main_path_to_frames = opt.base_path + '/' + opt.video_seq + opt.sample
         list_of_frames      = np.sort([i for i in os.listdir(main_path_to_frames) if '.jpg' in i])
         list_of_frames      = list_of_frames if opt.start_frame==-1 else list_of_frames[opt.start_frame:opt.end_frame]
-        list_of_shots       = phalp_tracker.get_list_of_shots(main_path_to_frames, list_of_frames)
+        list_of_shots       = phalp_tracker.get_list_of_shots(main_path_to_frames, list_of_frames) ## list of frames denoting a shot changes i assume.
         
         tracked_frames          = []
         final_visuals_dic       = {}
 
+        ## Loop-1: from frame 1 to frame T.
         for t_, frame_name in enumerate(tqdm(list_of_frames)):
             if(opt.verbose): 
                 print('\n\n\nTime: ', opt.video_seq, frame_name, t_, time.time()-time_ if t_>0 else 0 )
@@ -76,12 +77,13 @@ def test_tracker(opt, phalp_tracker: PHALP_tracker):
             detections = []
             for bbox, mask, score, mask_name, gt_id in zip(pred_bbox, pred_masks, pred_scores, mask_names, gt):
                 if bbox[2]-bbox[0]<50 or bbox[3]-bbox[1]<100: continue
+                ## return all the necessary feature (pose, appe, etc.) given the bounding box and masks. 
                 detection_data = phalp_tracker.get_human_apl(image_frame, mask, bbox, score, [main_path_to_frames, frame_name], mask_name, t_, measurments, gt_id)
                 detections.append(Detection(detection_data))
 
             ############ tracking ##############
             tracker.predict()
-            tracker.update(detections, t_, frame_name, opt.shot)
+            tracker.update(detections, t_, frame_name, opt.shot) ## during update, it performs association (i.e. matching)
 
             ############ record the results ##############
             final_visuals_dic.setdefault(frame_name, {'time': t_, 'shot': opt.shot})
@@ -90,12 +92,13 @@ def test_tracker(opt, phalp_tracker: PHALP_tracker):
             
             for tracks_ in tracker.tracks:
                 if(frame_name not in tracked_frames): tracked_frames.append(frame_name)
-                if(not(tracks_.is_confirmed())): continue
+                if(not(tracks_.is_confirmed())): continue ## if the current tracklets subjects is not confirmed, just continued. 
                 
                 track_id        = tracks_.track_id
                 track_data_hist = tracks_.track_data['history'][-1]
                 track_data_pred = tracks_.track_data['prediction']
 
+                ## map the id, bbox, and time into the final visuals image at each frame.
                 final_visuals_dic[frame_name]['tid'].append(track_id)
                 final_visuals_dic[frame_name]['bbox'].append(track_data_hist['bbox'])
                 final_visuals_dic[frame_name]['tracked_time'].append(tracks_.time_since_update)
@@ -144,6 +147,8 @@ def test_tracker(opt, phalp_tracker: PHALP_tracker):
     except Exception as e: 
         print(e)
         print(traceback.format_exc())     
+
+    return phalp_tracker
 
 
 class options():
