@@ -12,7 +12,7 @@ python demo_online_multi.py \
 --all_videos         True \
 --track_history      7 \
 --past_lookback      20 \
---max_age_track      24 \
+--max_age_track      4 \
 --n_init             5 \
 --low_th_c           0.8 \
 --alpha              0.1 \
