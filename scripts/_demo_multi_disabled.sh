@@ -28,6 +28,6 @@ python demo_online_multi.py \
 --detection_type     "mask" \
 --start_frame        -1 \
 --end_frame          100 \
---multi_view         True \
+--multi_view         False \
 --num_views          2 \
 --test_video_id      "Multi_view_test2"
