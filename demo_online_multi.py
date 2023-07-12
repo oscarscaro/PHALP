@@ -150,10 +150,11 @@ def test_tracker(opt, phalp_tracker_multi):
 
                 ##TODO: we want to rewrite the final_visuals_dic for multiple view at one loop, rewrite every video from 1-1, 1-2, 1-3 depending on the view-index.
 
+                image_frame = image_frame_list[view_index][t_].image_frame
                 ############ record the results ##############
                 final_visuals_dic = final_visuals_dic_multi[view_index]
                 final_visuals_dic.setdefault(frame_name, {'time': t_, 'shot': opt.shot})
-                if(opt.render): final_visuals_dic[frame_name]['frame'] = image_frame_element = image_frame_list[view_index][t_].image_frame
+                if(opt.render): final_visuals_dic[frame_name]['frame'] = image_frame
                 for key_ in visual_store_: final_visuals_dic[frame_name][key_] = []
                 
                 tracked_frames = track_frames_multi[view_index]
