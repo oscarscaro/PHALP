@@ -153,7 +153,7 @@ def test_tracker(opt, phalp_tracker_multi):
                 ############ record the results ##############
                 final_visuals_dic = final_visuals_dic_multi[view_index]
                 final_visuals_dic.setdefault(frame_name, {'time': t_, 'shot': opt.shot})
-                if(opt.render): final_visuals_dic[frame_name]['frame'] = image_frame
+                if(opt.render): final_visuals_dic[frame_name]['frame'] = image_frame_element = image_frame_list[view_index][t_].image_frame
                 for key_ in visual_store_: final_visuals_dic[frame_name][key_] = []
                 
                 tracked_frames = track_frames_multi[view_index]
@@ -192,9 +192,10 @@ def test_tracker(opt, phalp_tracker_multi):
                                 for pkey_ in prediction_keys: final_visuals_dic[frame_name_][pkey_].append(track_data_pred_[pkey_.split('_')[1]][-1])
 
                 
-                ##TODO:BUG FIX (not rendering the same video)
+                ##TODO:BUG FIX (rendering the same based video for two frames)
                 ############ save the video ##############
                 list_of_frames = list_of_frames_multi[view_index] 
+                list_of_shots = list_of_shots_multi[view_index]
                 if(opt.render and t_>=opt.n_init):
                     d_ = opt.n_init+1 if(t_+1==len(list_of_frames)) else 1
                     for t__ in range(t_, t_+d_):
@@ -206,7 +207,7 @@ def test_tracker(opt, phalp_tracker_multi):
                             file_name      = 'out/' + opt.storage_folder + f"/view{view_index}" '/PHALP_' + str(opt.video_seq) + '_'+ str(opt.detection_type) + '.mp4'
                             video_file     = cv2.VideoWriter(file_name, cv2.VideoWriter_fourcc(*'mp4v'), 30, frameSize=f_size)
                             video_file_multi.append(video_file)
-                        ##TODO: Index out of range
+                        ##TODO: Index out of range, fix just write the latest one, problem is nothing in the list at frame 6.
                         video_file_multi[view_index].write(rendered_)
                         del final_visuals_dic[frame_key]['frame']
                         for tkey_ in tmp_keys_:  del final_visuals_dic[frame_key][tkey_] 
