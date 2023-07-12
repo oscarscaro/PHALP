@@ -7,6 +7,7 @@ import torch
 import numpy as np
 from . import linear_assignment
 from .track import Track
+from tqdm import tqdm
 
 np.set_printoptions(formatter={'float': '{: 0.3f}'.format})
 
@@ -63,7 +64,8 @@ class Tracker:
         for track in self.tracks:
             track.predict(self.phalp_tracker, increase_age=True)
 
-    def update(self, detections, frame_t, image_name, shot):
+
+    def update_spatio(self, detections, frame_t, image_name, shot):
         """Perform measurement update and track management.
 
         Parameters
@@ -72,18 +74,52 @@ class Tracker:
             A list of detections at the current time step.
 
         """
-        matches, unmatched_tracks, unmatched_detections, statistics = self._match(detections)
+
+
+    def update(self, detections, frame_t, image_name, shot, detections_multi=None, view_index=0):
+        """Perform measurement update and track management.
+
+        Parameters
+        ----------
+        detections : List[deep_sort.detection.Detection]
+            A list of detections at the current time step.
+
+        """
+        matches, unmatched_tracks, unmatched_detections, statistics = self._match(detections) ##get the permutation matrix
         self.tracked_cost[frame_t] = [statistics[0], matches, unmatched_tracks, unmatched_detections, statistics[1], statistics[2], statistics[3], statistics[4]] 
         if(self.opt.verbose): print(np.round(np.array(statistics[0]), 2))
 
+
+        ###### Loop 3, tracklets(subjects) level #####
+
+        ## For matching pairs between time stamp t and t+1
+        ## For matches, the time_since_updates will be set back to 0
         for track_idx, detection_idx in matches:
-            self.tracks[track_idx].update(detections[detection_idx], detection_idx, shot)
+            self.tracks[track_idx].update(detections[detection_idx], detection_idx, shot) ##here perform matching
+
+        #### Multi-view Matching Implementation #### 
+        for view_num, detections_dif_view in enumerate(tqdm(detections_multi)):
+            if view_num != view_index:
+                matches_dif, unmatched_tracks_dif, unmatched_detections_dif, statistics_dif = self._match(detections_dif_view) ##get the permutation matrix
+                for track_idx, detection_idx in matches_dif:
+                    ## if matched_ids from different view is in unmatched_ids at current view
+                    if track_idx in unmatched_tracks:
+                        self.tracks[track_idx].update(detections_dif_view[detection_idx], detection_idx, shot, True) ##here perform matching with differnt view
+                        matches.append(track_idx) ##add the track_ids to matches
+                        unmatched_tracks.remove(track_idx)
+                        if detection_idx in unmatched_detections:
+                            unmatched_detections.remove(detection_idx)
+
+
+        ## After we obtain all the matches from view 1,2, ..., S. Perform vector accumulation
         self.accumulate_vectors([i[0] for i in matches], features=self.opt.predict)
- 
+
+        ## For tracklets that has not been matched
         for track_idx in unmatched_tracks:
             self.tracks[track_idx].mark_missed()
         self.accumulate_vectors(unmatched_tracks, features=self.opt.predict)
-    
+        
+
         for detection_idx in unmatched_detections:
             self._initiate_track(detections[detection_idx], detection_idx)
             
@@ -100,7 +136,7 @@ class Tracker:
             uv_maps       += [track.track_data['prediction']['uv'][-1]]
             targets       += [track.track_id]
             
-        ## here metric is the nn_matching, which employes hungarian method to perform association
+        ## here metric is the nn_matching, Update the distance metric with new data.
         self.metric.partial_fit(np.asarray(appe_features), np.asarray(loca_features), np.asarray(pose_features), np.asarray(uv_maps), np.asarray(targets), active_targets)
         
         return matches
@@ -131,6 +167,8 @@ class Tracker:
         track_idt  = [i for i, t in enumerate(self.tracks) if t.is_confirmed() or t.is_tentative()]
         detect_idt = [i for i, d in enumerate(detections)]
         
+
+        ## use_gt is set to false now so we can ignore for multi-view for now. 
         if(self.opt.use_gt): 
             matches = []
             for t_, t_gt in enumerate(track_gt):
@@ -140,6 +178,7 @@ class Tracker:
             d_pool = [d_ for (_, d_) in matches]
             unmatched_tracks     = [t_ for t_ in track_idt if t_ not in t_pool]
             unmatched_detections = [d_ for d_ in detect_idt if d_ not in d_pool]
+
             return matches, unmatched_tracks, unmatched_detections, [cost_matrix, track_gt, detect_gt, track_idt, detect_idt]
         
         return matches, unmatched_tracks, unmatched_detections, [cost_matrix, track_gt, detect_gt, track_idt, detect_idt]

@@ -67,14 +67,38 @@ class Track:
         self.track_data['prediction']['loca'].append(loca_predicted)
         self.track_data['prediction']['pose'].append(pose_predicted)
 
-    def update(self, detection, detection_id, shot):             
+    ### Crucial to multi-view implementation
+    def update(self, detection, detection_id, shot,multi_view=False): 
+        """
+        Updates specific tracklets history with detection data
 
+        Args:
+            detection: The price of a single item.
+            detection_id: The quantity of items.
+            shot:
+            multi_view (bool, optional): The discount percentage (default is 0).
+
+        Effect:
+            
+        """            
+
+        #TODO: knowing exactly what track_data["history"] look like
+
+        ## append the detection_data on top of the history element
         self.track_data["history"].append(copy.deepcopy(detection.detection_data))
+
         ## If shot changes detected
         if(shot==1): 
             for tx in range(self.opt.track_history):
                 self.track_data["history"][-1-tx]['loca'] = copy.deepcopy(detection.detection_data['loca'])
 
+        ###### Multi-view set up ######
+        ## Location wise we would be using the same location from the previous view. 
+        if(multi_view):
+            self.track_data["history"][-1]['loca'] = copy.deepcopy(self.track_data["history"][-2]['loca'])
+            
+
+        ## corresponding to argument "TPL"
         if("T" in self.opt.predict):
             mixing_alpha_                      = self.opt.alpha*(detection.detection_data['conf']**2)
             ones_old                           = self.track_data['prediction']['uv'][-1][3:, :, :]==1
@@ -98,6 +122,7 @@ class Track:
         
         self.hits += 1
         self.time_since_update = 0
+        ## if track state hits the number of n_init, it's confirmed to be a real track state
         if self.state == TrackState.Tentative and self.hits >= self._n_init:
             self.state = TrackState.Confirmed
 
@@ -107,6 +132,7 @@ class Track:
         """
         if self.state == TrackState.Tentative:
             self.state = TrackState.Deleted
+        ## if time_since_update reaches over Max_age, tracklets got deleted
         elif self.time_since_update > self._max_age:
             self.state = TrackState.Deleted
 

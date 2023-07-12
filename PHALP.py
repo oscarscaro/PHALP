@@ -257,7 +257,7 @@ class PHALP_tracker(nn.Module):
         return detection_data
     
     
-    def get_detections(self, image, frame_name, t_):
+    def get_detections(self, image, frame_name, t_, view_index=0):
         image_to_write = image.copy()
         mask_names     = []
 
@@ -269,10 +269,11 @@ class PHALP_tracker(nn.Module):
 
             if(self.opt.render): 
                 visualizer            = Visualizer(image_to_write[:, :, ::-1], MetadataCatalog.get(self.detectron2_cfg.DATASETS.TRAIN[0]), scale=1.2)
-                if(self.opt.store_mask): cv2.imwrite("out/" + self.opt.storage_folder + "/_TMP/" + self.opt.video_seq + "_" + frame_name, visualizer.draw_instance_predictions(instances.to("cpu")).get_image()[:, :, ::-1])
+                ## Multi-view wries
+                if(self.opt.store_mask): cv2.imwrite("out/" + self.opt.storage_folder + f"/view{view_index}" + "/_TMP/" + self.opt.video_seq + "_" + frame_name, visualizer.draw_instance_predictions(instances.to("cpu")).get_image()[:, :, ::-1])
             
             for i in range(instances.pred_classes.shape[0]):
-                mask_name_ = os.path.join("out/" + self.opt.storage_folder + "/_TMP/", self.opt.video_seq + '_%s_%02d.png' % (frame_name.split('.')[0], i))
+                mask_name_ = os.path.join("out/" + self.opt.storage_folder + f"/view{view_index}" + "/_TMP/", self.opt.video_seq + '_%s_%02d.png' % (frame_name.split('.')[0], i))
                 mask_names.append(mask_name_)
                 if(self.opt.store_mask): 
                     mask_bw = instances.pred_masks[i].cpu().numpy()
@@ -286,10 +287,10 @@ class PHALP_tracker(nn.Module):
 
         return pred_bbox, pred_masks, pred_scores, mask_names, ground_truth
 
-    def get_list_of_shots(self, main_path_to_frames, list_of_frames):
+    def get_list_of_shots(self, main_path_to_frames, list_of_frames, view_index=0):
         list_of_shots    = []
         if(self.opt.detect_shots):
-            video_tmp_name   = 'out/' + self.opt.storage_folder + "/_TMP/" + str(self.opt.video_seq) + ".mp4"
+            video_tmp_name   = 'out/' + self.opt.storage_folder + f"/view{view_index}" + "/_TMP/" + str(self.opt.video_seq) + ".mp4"
             for ft_, fname_ in enumerate(list_of_frames):
                 im_ = cv2.imread(main_path_to_frames + '/' + fname_)
                 if(ft_==0): video_file = cv2.VideoWriter(video_tmp_name, cv2.VideoWriter_fourcc(*'mp4v'), 24, frameSize=(im_.shape[1], im_.shape[0]))
