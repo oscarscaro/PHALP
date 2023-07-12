@@ -76,7 +76,7 @@ class Tracker:
         """
 
 
-    def update(self, detections, frame_t, image_name, shot, detections_multi=None, view_index=0):
+    def update(self, detections, frame_t, image_name, shot, detections_multi=None, view_index=0, multi_view_bool=False):
         """Perform measurement update and track management.
 
         Parameters
@@ -96,21 +96,23 @@ class Tracker:
         ## For matches, the time_since_updates will be set back to 0
         for track_idx, detection_idx in matches:
             self.tracks[track_idx].update(detections[detection_idx], detection_idx, shot) ##here perform matching
-
+            
+            
         #### Multi-view Matching Implementation #### 
-        for view_num, detections_dif_view in enumerate(tqdm(detections_multi)):
-            if view_num != view_index:
-                matches_dif, unmatched_tracks_dif, unmatched_detections_dif, statistics_dif = self._match(detections_dif_view) ##get the permutation matrix
-                for track_idx, detection_idx in matches_dif:
-                    ## if matched_ids from different view is in unmatched_ids at current view
-                    if track_idx in unmatched_tracks:
-                        print("Applying Multi-view matching...")
-                        self.tracks[track_idx].update(detections_dif_view[detection_idx], detection_idx, shot, True) ##here perform matching with differnt view
-                        print(matches)
-                        matches.append([track_idx,detection_idx]) ##add the track_ids to matches
-                        unmatched_tracks.remove(track_idx)
-                        if detection_idx in unmatched_detections:
-                            unmatched_detections.remove(detection_idx)
+        if multi_view_bool:
+            for view_num, detections_dif_view in enumerate(tqdm(detections_multi)):
+                if view_num != view_index:
+                    matches_dif, unmatched_tracks_dif, unmatched_detections_dif, statistics_dif = self._match(detections_dif_view) ##get the permutation matrix
+                    for track_idx, detection_idx in matches_dif:
+                        ## if matched_ids from different view is in unmatched_ids at current view
+                        if track_idx in unmatched_tracks:
+                            print("Applying Multi-view matching...")
+                            self.tracks[track_idx].update(detections_dif_view[detection_idx], detection_idx, shot, True) ##here perform matching with differnt view
+                            print(matches)
+                            matches.append([track_idx,detection_idx]) ##add the track_ids to matches
+                            unmatched_tracks.remove(track_idx)
+                            if detection_idx in unmatched_detections:
+                                unmatched_detections.remove(detection_idx)
 
 
         ## After we obtain all the matches from view 1,2, ..., S. Perform vector accumulation

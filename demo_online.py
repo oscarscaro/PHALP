@@ -193,6 +193,10 @@ class options():
         self.parser.add_argument('--start_frame', type=int, default='1000')
         self.parser.add_argument('--end_frame', type=int, default='1100')
         self.parser.add_argument('--store_extra_info', type=str2bool, nargs='?', const=True, default=False)
+
+        self.parser.add_argument('--test_video_id', type=str)
+        self.parser.add_argument('--view_number', type=int, default=1) ##view_number for
+
     
     def parse(self):
         self.opt          = self.parser.parse_args()
@@ -228,6 +232,9 @@ if __name__ == '__main__':
         opt.video_seq       = video
         opt.sample          =  '/img/'
         test_tracker(opt, phalp_tracker)
+
+    if(opt.track_dataset=='test'):
+        video    = opt.test_video_id
 
 
             

@@ -4,7 +4,7 @@
 
 python demo_online_multi.py \
 --track_dataset      "test" \
---storage_folder     "testing_multi" \
+--storage_folder     "testing_multi_disabled" \
 --predict            "TPL" \
 --distance_type      "EQ_010" \
 --encode_type        "4c" \

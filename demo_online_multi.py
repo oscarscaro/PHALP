@@ -62,17 +62,18 @@ def test_tracker(opt, phalp_tracker_multi):
         ############ multi-view set up ##############
         if (opt.multi_view):
             print("Multi-view activated...")
-            main_path_to_frames_multi = []
-            list_of_frames_multi = []
-            list_of_shots_multi = []
-            for j in range(1,(opt.num_views+1)):
-                ## directory should looks like: _DEMO/video/1 or 2/img
-                main_path_to_frames = opt.base_path + '/' + opt.video_seq + f"/{j}" + opt.sample 
-                main_path_to_frames_multi.append(main_path_to_frames)
-                list_of_frames = np.sort([i for i in os.listdir(main_path_to_frames) if '.jpg' in i])
-                list_of_frames_multi.append(list_of_frames)
-                list_of_shots = phalp_tracker_multi[j-1].get_list_of_shots(main_path_to_frames, list_of_frames, j-1) ## list of frames denoting a shot changes
-                list_of_shots_multi.append(list_of_shots)
+
+        main_path_to_frames_multi = []
+        list_of_frames_multi = []
+        list_of_shots_multi = []
+        for j in range(1,(opt.num_views+1)):
+            ## directory should looks like: _DEMO/video/1 or 2/img
+            main_path_to_frames = opt.base_path + '/' + opt.video_seq + f"/{j}" + opt.sample 
+            main_path_to_frames_multi.append(main_path_to_frames)
+            list_of_frames = np.sort([i for i in os.listdir(main_path_to_frames) if '.jpg' in i])
+            list_of_frames_multi.append(list_of_frames)
+            list_of_shots = phalp_tracker_multi[j-1].get_list_of_shots(main_path_to_frames, list_of_frames, j-1) ## list of frames denoting a shot changes
+            list_of_shots_multi.append(list_of_shots)
         
 
         track_frames_multi = []
@@ -80,7 +81,7 @@ def test_tracker(opt, phalp_tracker_multi):
         for _ in range(opt.num_views):
             tracked_frames          = []
             track_frames_multi.append(tracked_frames)
-            final_visuals_dic       = {} ##TODO: writing the files
+            final_visuals_dic       = {} 
             final_visuals_dic_multi.append(final_visuals_dic)
         
         
@@ -138,7 +139,7 @@ def test_tracker(opt, phalp_tracker_multi):
                 detections = detection_data_multi[view_index]
                 frame_name = list_of_frames_multi[view_index][t_]
                 opt.shot = 1 if t_ in list_of_shots_multi[view_index] else 0
-                tracker.update(detections, t_, frame_name, opt.shot,detection_data_multi,view_index) ## during update, it performs association (i.e. matching)
+                tracker.update(detections, t_, frame_name, opt.shot,detection_data_multi,view_index,opt.multi_view) ## during update, it performs association (i.e. matching)
 
                 ##TODO: this is another implementation (closer to MvMHAT version of implementation)
                 # ### perform matching
@@ -304,6 +305,7 @@ class options():
         ### Multi-vie argument set-up
         self.parser.add_argument('--multi_view', type=str2bool, nargs='?', const=True, default=True)
         self.parser.add_argument('--num_views', type=int, default=2)
+        self.parser.add_argument('--test_video_id', type=str)
     
     def parse(self):
         self.opt          = self.parser.parse_args()
@@ -327,16 +329,16 @@ if __name__ == '__main__':
         phalp_tracker_multi.append(phalp_tracker)
 
     if(opt.track_dataset=='test'):   
-        video    = "multi_view_test1"
+        video    = opt.test_video_id #"multi_view_test1"
 
         #os.system("rm -rf " + "_DEMO/" + video)
         #os.makedirs("_DEMO/" + video, exist_ok=True)    
         #os.makedirs("_DEMO/" + video + "/img", exist_ok=True)    
 
-
-        #fe = FrameExtractor("_DEMO/" + video + f"/{video}.mp4")
-        #print('Number of frames: ', fe.n_frames)
-        #fe.extract_frames(every_x_frame=1, img_name='', dest_path= "_DEMO/" + video + "/img/", start_frame=1100, end_frame=1300)
+        for view_index in range(opt.view_nums):
+            fe = FrameExtractor("_DEMO/" + video + f"/{video}_{view_index+1}.mp4")
+            print('Number of frames: ', fe.n_frames)
+            fe.extract_frames(every_x_frame=1, img_name='', dest_path= "_DEMO/" + video + f"/{view_index+1}" + "/img/", start_frame=0, end_frame=1440)
 
         opt.base_path       = '_DEMO/'
         opt.video_seq       = video
