@@ -19,7 +19,7 @@ from utils.utils import FrameExtractor, str2bool
 warnings.filterwarnings('ignore')
   
         
-def test_tracker(opt, phalp_tracker: PHALP_tracker):
+def test_tracker(opt, phalp_tracker_multi):
     
     eval_keys       = ['tracked_ids', 'tracked_bbox', 'tid', 'bbox', 'tracked_time']
     history_keys    = ['appe', 'loca', 'pose', 'uv'] if opt.render else []
@@ -43,8 +43,10 @@ def test_tracker(opt, phalp_tracker: PHALP_tracker):
             os.makedirs('out/' + opt.storage_folder + f"/view{view_index}" + '/_TMP', exist_ok=True)  
     except: pass
     
-    phalp_tracker.eval()
-    phalp_tracker.HMAR.reset_nmr(opt.res)    
+
+    for phalp_tracker in phalp_tracker_multi:
+        phalp_tracker.eval()
+        phalp_tracker.HMAR.reset_nmr(opt.res)    
     
 
     ############ multi-view tracker set up ##############
@@ -52,7 +54,7 @@ def test_tracker(opt, phalp_tracker: PHALP_tracker):
     for view in range(opt.num_views):
         print(f"Initialized Tracker {view}\n")
         metric  = nn_matching.NearestNeighborDistanceMetric(opt, opt.hungarian_th, opt.past_lookback)
-        tracker = Tracker(opt, metric, max_age=opt.max_age_track, n_init=opt.n_init, phalp_tracker=phalp_tracker, dims=[4096, 4096, 99])  ## dimension of apperance, pose, and location. 
+        tracker = Tracker(opt, metric, max_age=opt.max_age_track, n_init=opt.n_init, phalp_tracker=phalp_tracker_multi[view], dims=[4096, 4096, 99])  ## dimension of apperance, pose, and location. 
         tracker_multi.append(tracker)
     
 
@@ -69,13 +71,8 @@ def test_tracker(opt, phalp_tracker: PHALP_tracker):
                 main_path_to_frames_multi.append(main_path_to_frames)
                 list_of_frames = np.sort([i for i in os.listdir(main_path_to_frames) if '.jpg' in i])
                 list_of_frames_multi.append(list_of_frames)
-                list_of_shots = phalp_tracker.get_list_of_shots(main_path_to_frames, list_of_frames, j-1) ## list of frames denoting a shot changes
+                list_of_shots = phalp_tracker_multi[j-1].get_list_of_shots(main_path_to_frames, list_of_frames, j-1) ## list of frames denoting a shot changes
                 list_of_shots_multi.append(list_of_shots)
-        else:
-            main_path_to_frames = opt.base_path + '/' + opt.video_seq + opt.sample
-            list_of_frames      = np.sort([i for i in os.listdir(main_path_to_frames) if '.jpg' in i])
-            list_of_frames      = list_of_frames if opt.start_frame==-1 else list_of_frames[opt.start_frame:opt.end_frame]
-            list_of_shots       = phalp_tracker.get_list_of_shots(main_path_to_frames, list_of_frames) ## list of frames denoting a shot changes I assume.
         
 
         track_frames_multi = []
@@ -96,6 +93,7 @@ def test_tracker(opt, phalp_tracker: PHALP_tracker):
             image_frame_list = []
             for view_index in range(opt.num_views):
                 image_frames = []
+                main_path_to_frames = main_path_to_frames_multi[view_index]
                 for frame_name in list_of_frames_multi[view_index]:
                     image_frame = cv2.imread(main_path_to_frames + '/' + frame_name)
                     image_frame_obj = ImageFrame(image_frame)
@@ -107,7 +105,7 @@ def test_tracker(opt, phalp_tracker: PHALP_tracker):
             detections_multi = [] ## contains detection for frame t_ for multi-view
             for view_index in range(opt.num_views):
                 ## image_frame: the image_frame at frame t_ with view 1 and view 2. frame_name: 
-                pred_bbox, pred_masks, pred_scores, mask_names, gt = phalp_tracker.get_detections(image_frame_list[view_index][t_].image_frame, list_of_frames_multi[view_index][t_], t_, view_index) 
+                pred_bbox, pred_masks, pred_scores, mask_names, gt = phalp_tracker_multi[view_index].get_detections(image_frame_list[view_index][t_].image_frame, list_of_frames_multi[view_index][t_], t_, view_index) 
                 detections_element = DetectionWrap(pred_bbox,pred_masks,pred_scores,mask_names,gt)
                 detections_multi.append(detections_element)
                  
@@ -123,7 +121,7 @@ def test_tracker(opt, phalp_tracker: PHALP_tracker):
                 for bbox, mask, score, mask_name, gt_id in zip(detections_element.pred_bbox, detections_element.pred_masks, detections_element.pred_scores, detections_element.mask_names, detections_element.gt):
                     if bbox[2]-bbox[0]<50 or bbox[3]-bbox[1]<100: continue
                     ## return all the necessary feature (pose, appe, etc.) given the bounding box and masks. 
-                    detection_data = phalp_tracker.get_human_apl(image_frame_element.image_frame, mask, bbox, score, [main_path_to_frames, frame_name], mask_name, t_, image_frame_element.measurments, gt_id)
+                    detection_data = phalp_tracker_multi[view_index].get_human_apl(image_frame_element.image_frame, mask, bbox, score, [main_path_to_frames, frame_name], mask_name, t_, image_frame_element.measurments, gt_id)
                     ##TODO: BUG, DETECTION same name with wrapper class
                     detections.append(Detection(detection_data))
                 detection_data_multi.append(detections)
@@ -193,21 +191,22 @@ def test_tracker(opt, phalp_tracker: PHALP_tracker):
                                 for hkey_ in history_keys:    final_visuals_dic[frame_name_][hkey_].append(track_data_hist_[hkey_])
                                 for pkey_ in prediction_keys: final_visuals_dic[frame_name_][pkey_].append(track_data_pred_[pkey_.split('_')[1]][-1])
 
-                                
-                ##TODO:
+                
+                ##TODO:BUG FIX (not rendering the same video)
                 ############ save the video ##############
-
+                list_of_frames = list_of_frames_multi[view_index] 
                 if(opt.render and t_>=opt.n_init):
                     d_ = opt.n_init+1 if(t_+1==len(list_of_frames)) else 1
                     for t__ in range(t_, t_+d_):
-                        frame_key          = list_of_frames[t__-opt.n_init]
-                        rendered_, f_size  = render_frame_main_online(opt, phalp_tracker, frame_key, final_visuals_dic[frame_key], opt.track_dataset, track_id=-100)      
+                        frame_key          = list_of_frames[t__-opt.n_init] ##frame key is the same, don't think this is the issue here
+                        rendered_, f_size  = render_frame_main_online(opt, phalp_tracker_multi[view_index], frame_key, final_visuals_dic[frame_key], opt.track_dataset, track_id=-100)      
                         if(t__-opt.n_init in list_of_shots): cv2.rectangle(rendered_, (0,0), (f_size[0], f_size[1]), (0,0,255), 4)
                         if(t__-opt.n_init==0):
                             ## Multi-view writes into sub-folder
                             file_name      = 'out/' + opt.storage_folder + f"/view{view_index}" '/PHALP_' + str(opt.video_seq) + '_'+ str(opt.detection_type) + '.mp4'
                             video_file     = cv2.VideoWriter(file_name, cv2.VideoWriter_fourcc(*'mp4v'), 30, frameSize=f_size)
                             video_file_multi.append(video_file)
+                        ##TODO: Index out of range
                         video_file_multi[view_index].write(rendered_)
                         del final_visuals_dic[frame_key]['frame']
                         for tkey_ in tmp_keys_:  del final_visuals_dic[frame_key][tkey_] 
@@ -226,7 +225,7 @@ def test_tracker(opt, phalp_tracker: PHALP_tracker):
         print(e)
         print(traceback.format_exc())     
 
-    return phalp_tracker
+    return phalp_tracker_multi
 
 
 class DetectionWrap():
@@ -312,9 +311,16 @@ class options():
 if __name__ == '__main__':
     
     opt                   = options().parse()
-    phalp_tracker         = PHALP_tracker(opt)
-    phalp_tracker.cuda()
-    phalp_tracker.eval()
+
+    phalp_tracker_multi   =   []
+
+
+    view_num              = 2
+    for i in range(view_num):
+        phalp_tracker         = PHALP_tracker(opt)
+        phalp_tracker.cuda()
+        phalp_tracker.eval()
+        phalp_tracker_multi.append(phalp_tracker)
 
     if(opt.track_dataset=='test'):   
         video    = "multi_view_test1"
@@ -331,7 +337,7 @@ if __name__ == '__main__':
         opt.base_path       = '_DEMO/'
         opt.video_seq       = video
         opt.sample          =  '/img/'
-        test_tracker(opt, phalp_tracker)
+        test_tracker(opt, phalp_tracker_multi)
 
 
             
