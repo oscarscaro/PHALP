@@ -82,7 +82,9 @@ def test_tracker(opt, phalp_tracker_multi):
             track_frames_multi.append(tracked_frames)
             final_visuals_dic       = {} ##TODO: writing the files
             final_visuals_dic_multi.append(final_visuals_dic)
-
+        
+        
+        video_file_multi = []
         ## Loop-1: from frame 1 to frame T, every frame is denoted as "t_". 
         for t_, frame_name_view1 in enumerate(tqdm(list_of_frames_multi[0])):
             if(opt.verbose): 
@@ -122,11 +124,10 @@ def test_tracker(opt, phalp_tracker_multi):
                     if bbox[2]-bbox[0]<50 or bbox[3]-bbox[1]<100: continue
                     ## return all the necessary feature (pose, appe, etc.) given the bounding box and masks. 
                     detection_data = phalp_tracker_multi[view_index].get_human_apl(image_frame_element.image_frame, mask, bbox, score, [main_path_to_frames, frame_name], mask_name, t_, image_frame_element.measurments, gt_id)
-                    ##TODO: BUG, DETECTION same name with wrapper class
                     detections.append(Detection(detection_data))
                 detection_data_multi.append(detections)
 
-            video_file_multi = []
+
             ### Loop-2: from view 1 to view S, every view is denoted as view_index" 
             for view_index in range(opt.num_views):
                 tracker = tracker_multi[view_index]
@@ -192,8 +193,6 @@ def test_tracker(opt, phalp_tracker_multi):
                                 for hkey_ in history_keys:    final_visuals_dic[frame_name_][hkey_].append(track_data_hist_[hkey_])
                                 for pkey_ in prediction_keys: final_visuals_dic[frame_name_][pkey_].append(track_data_pred_[pkey_.split('_')[1]][-1])
 
-                
-                ##TODO:BUG FIX (rendering the same based video for two frames)
                 ############ save the video ##############
                 list_of_frames = list_of_frames_multi[view_index] 
                 list_of_shots = list_of_shots_multi[view_index]
@@ -207,7 +206,10 @@ def test_tracker(opt, phalp_tracker_multi):
                             ## Multi-view writes into sub-folder
                             file_name      = 'out/' + opt.storage_folder + f"/view{view_index}" '/PHALP_' + str(opt.video_seq) + '_'+ str(opt.detection_type) + '.mp4'
                             video_file     = cv2.VideoWriter(file_name, cv2.VideoWriter_fourcc(*'mp4v'), 30, frameSize=f_size)
-                            video_file_multi.append(video_file)
+                            if len(video_file_multi) == 0 or len(video_file_multi) == 1:
+                                video_file_multi.append(video_file)
+                            else:
+                                video_file_multi[view_index] = video_file
                         ##TODO: Index out of range, fix just write the latest one, problem is nothing in the list at frame 6.
                         video_file_multi[view_index].write(rendered_)
                         del final_visuals_dic[frame_key]['frame']
