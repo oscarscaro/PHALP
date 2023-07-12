@@ -104,8 +104,10 @@ class Tracker:
                 for track_idx, detection_idx in matches_dif:
                     ## if matched_ids from different view is in unmatched_ids at current view
                     if track_idx in unmatched_tracks:
+                        print("Applying Multi-view matching...")
                         self.tracks[track_idx].update(detections_dif_view[detection_idx], detection_idx, shot, True) ##here perform matching with differnt view
-                        matches.append(track_idx) ##add the track_ids to matches
+                        print(matches)
+                        matches.append([track_idx,detection_idx]) ##add the track_ids to matches
                         unmatched_tracks.remove(track_idx)
                         if detection_idx in unmatched_detections:
                             unmatched_detections.remove(detection_idx)
