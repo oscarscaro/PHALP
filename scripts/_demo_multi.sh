@@ -3,9 +3,8 @@
 # for a shot change video, try --youtube_id "2VxpRal7wJE" 
 
 python demo_online_multi.py \
---track_dataset      "youtube" \
---youtube_id         "xEH_5T9jMVU" \
---storage_folder     "Videos_v1" \
+--track_dataset      "test" \
+--storage_folder     "testing_multi" \
 --predict            "TPL" \
 --distance_type      "EQ_010" \
 --encode_type        "4c" \
@@ -28,4 +27,6 @@ python demo_online_multi.py \
 --batch_id           -1 \
 --detection_type     "mask" \
 --start_frame        -1 \
---end_frame          100
+--end_frame          100 \
+--multi_view         True \
+--num_views          2
