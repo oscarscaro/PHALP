@@ -107,8 +107,8 @@ def test_tracker(opt, phalp_tracker: PHALP_tracker):
             detections_multi = [] ## contains detection for frame t_ for multi-view
             for view_index in range(opt.num_views):
                 ## image_frame: the image_frame at frame t_ with view 1 and view 2. frame_name: 
-                pred_bbox, pred_masks, pred_scores, mask_names, gt = phalp_tracker.get_detections(image_frame_list[view_index][t_], list_of_frames_multi[view_index][t_], t_, view_index) 
-                detections_element = Detection(pred_bbox,pred_masks,pred_scores,mask_names,gt)
+                pred_bbox, pred_masks, pred_scores, mask_names, gt = phalp_tracker.get_detections(image_frame_list[view_index][t_].image_frame, list_of_frames_multi[view_index][t_], t_, view_index) 
+                detections_element = DetectionWrap(pred_bbox,pred_masks,pred_scores,mask_names,gt)
                 detections_multi.append(detections_element)
                  
 
@@ -124,10 +124,11 @@ def test_tracker(opt, phalp_tracker: PHALP_tracker):
                     if bbox[2]-bbox[0]<50 or bbox[3]-bbox[1]<100: continue
                     ## return all the necessary feature (pose, appe, etc.) given the bounding box and masks. 
                     detection_data = phalp_tracker.get_human_apl(image_frame_element.image_frame, mask, bbox, score, [main_path_to_frames, frame_name], mask_name, t_, image_frame_element.measurments, gt_id)
+                    ##TODO: BUG, DETECTION same name with wrapper class
                     detections.append(Detection(detection_data))
                 detection_data_multi.append(detections)
 
-
+            video_file_multi = []
             ### Loop-2: from view 1 to view S, every view is denoted as view_index" 
             for view_index in range(opt.num_views):
                 tracker = tracker_multi[view_index]
@@ -150,8 +151,6 @@ def test_tracker(opt, phalp_tracker: PHALP_tracker):
 
 
                 ##TODO: we want to rewrite the final_visuals_dic for multiple view at one loop, rewrite every video from 1-1, 1-2, 1-3 depending on the view-index.
-
-
 
                 ############ record the results ##############
                 final_visuals_dic = final_visuals_dic_multi[view_index]
@@ -197,6 +196,7 @@ def test_tracker(opt, phalp_tracker: PHALP_tracker):
                                 
                 ##TODO:
                 ############ save the video ##############
+
                 if(opt.render and t_>=opt.n_init):
                     d_ = opt.n_init+1 if(t_+1==len(list_of_frames)) else 1
                     for t__ in range(t_, t_+d_):
@@ -207,7 +207,8 @@ def test_tracker(opt, phalp_tracker: PHALP_tracker):
                             ## Multi-view writes into sub-folder
                             file_name      = 'out/' + opt.storage_folder + f"/view{view_index}" '/PHALP_' + str(opt.video_seq) + '_'+ str(opt.detection_type) + '.mp4'
                             video_file     = cv2.VideoWriter(file_name, cv2.VideoWriter_fourcc(*'mp4v'), 30, frameSize=f_size)
-                        video_file.write(rendered_)
+                            video_file_multi.append(video_file)
+                        video_file_multi[view_index].write(rendered_)
                         del final_visuals_dic[frame_key]['frame']
                         for tkey_ in tmp_keys_:  del final_visuals_dic[frame_key][tkey_] 
 
@@ -219,7 +220,7 @@ def test_tracker(opt, phalp_tracker: PHALP_tracker):
             joblib.dump(final_visuals_dic_multi[view_index], 'out/' + opt.storage_folder + f"/view{view_index}" + '/results/' + opt.track_dataset + "_" + str(opt.video_seq) + opt.post_fix  + '.pkl')
             tracker = tracker_multi[view_index]
             if(opt.use_gt): joblib.dump(tracker.tracked_cost, 'out/' + opt.storage_folder + f"/view{view_index}" + '/results/' + str(opt.video_seq) + '_' + str(opt.start_frame) + '_distance.pkl')
-        if(opt.render): video_file.release()
+            if(opt.render): video_file_multi[view_index].release()
     
     except Exception as e: 
         print(e)
@@ -228,7 +229,7 @@ def test_tracker(opt, phalp_tracker: PHALP_tracker):
     return phalp_tracker
 
 
-class Detection():
+class DetectionWrap():
     """
     Wrapper class to store information of detections
     """
