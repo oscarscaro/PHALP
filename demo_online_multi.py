@@ -335,7 +335,7 @@ if __name__ == '__main__':
         #os.makedirs("_DEMO/" + video, exist_ok=True)    
         #os.makedirs("_DEMO/" + video + "/img", exist_ok=True)    
 
-        for view_index in range(opt.view_nums):
+        for view_index in range(opt.num_views):
             fe = FrameExtractor("_DEMO/" + video + f"/{video}_{view_index+1}.mp4")
             print('Number of frames: ', fe.n_frames)
             fe.extract_frames(every_x_frame=1, img_name='', dest_path= "_DEMO/" + video + f"/{view_index+1}" + "/img/", start_frame=0, end_frame=1440)
