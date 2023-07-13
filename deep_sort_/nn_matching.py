@@ -176,7 +176,7 @@ class NearestNeighborDistanceMetric(object):
         
         self.samples = {k: self.samples[k] for k in active_targets}
 
-    def distance(self, detection_features, targets, dims=None, phalp_tracker=None):
+    def distance(self, detection_features, targets, dims=None, phalp_tracker=None, multi_view_eval = False):
         """Compute distance between features and targets.
 
         Parameters
@@ -194,6 +194,7 @@ class NearestNeighborDistanceMetric(object):
             `targets[i]` and `features[j]`.
 
         """
+        self.opt.multi_view_eval = multi_view_eval
         cost_matrix_a = np.zeros((len(targets), len(detection_features[0])))
         for i, target in enumerate(targets):
             cost_matrix_a[i, :] = self._metric(self.opt, self.samples[target], detection_features, dims, phalp_tracker)

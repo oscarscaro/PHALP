@@ -147,7 +147,7 @@ class Tracker:
         return matches
         
 
-    def _match(self, detections, multi_view_eval):
+    def _match(self, detections, multi_view_eval=False):
 
         def gated_metric(tracks, dets, track_indices, detection_indices):
             appe_emb          = np.array([dets[i].detection_data['appe'] for i in detection_indices])
@@ -156,8 +156,9 @@ class Tracker:
             uv_maps           = np.array([dets[i].detection_data['uv'] for i in detection_indices])
             targets           = np.array([tracks[i].track_id for i in track_indices])
             if multi_view_eval:
+                print("Setting multi_view_eval to True...")
                 self.opt.multi_view_eval = True
-            cost_matrix       = self.metric.distance([appe_emb, loca_emb, pose_emb, uv_maps], targets, dims=[self.A_dim, self.P_dim, self.L_dim], phalp_tracker=self.phalp_tracker)
+            cost_matrix       = self.metric.distance([appe_emb, loca_emb, pose_emb, uv_maps], targets, dims=[self.A_dim, self.P_dim, self.L_dim], phalp_tracker=self.phalp_tracker, multi_view_eval=self.opt.multi_view_eval)
 
             return cost_matrix
 
