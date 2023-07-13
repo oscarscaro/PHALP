@@ -85,7 +85,10 @@ class Track:
         #TODO: knowing exactly what track_data["history"] look like
 
         ## append the detection_data on top of the history element
-        self.track_data["history"].append(copy.deepcopy(detection.detection_data))
+        ## TODO: vector accumulation not done right
+        ## Right now, if multiview append history, vector not done right. 
+        if not multi_view:
+            self.track_data["history"].append(copy.deepcopy(detection.detection_data))
 
         ## If shot changes detected
         if(shot==1): 
@@ -93,9 +96,10 @@ class Track:
                 self.track_data["history"][-1-tx]['loca'] = copy.deepcopy(detection.detection_data['loca'])
 
         ###### Multi-view set up ######
+        ##TODO:
         ## Location wise we would be using the same location from the previous view. 
-        if(multi_view):
-            self.track_data["history"][-1]['loca'] = copy.deepcopy(self.track_data["history"][-2]['loca'])
+        # if(multi_view):
+        #     self.track_data["history"][-1]['loca'] = copy.deepcopy(self.track_data["history"][-2]['loca'])
             
 
         ## corresponding to argument "TPL"

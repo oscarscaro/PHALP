@@ -85,7 +85,7 @@ class Tracker:
             A list of detections at the current time step.
 
         """
-        matches, unmatched_tracks, unmatched_detections, statistics = self._match(detections) ##get the permutation matrix
+        matches, unmatched_tracks, unmatched_detections, statistics = self._match(detections, False) ##get the permutation matrix
         self.tracked_cost[frame_t] = [statistics[0], matches, unmatched_tracks, unmatched_detections, statistics[1], statistics[2], statistics[3], statistics[4]] 
         if(self.opt.verbose): print(np.round(np.array(statistics[0]), 2))
 
@@ -102,14 +102,15 @@ class Tracker:
         if multi_view_bool:
             for view_num, detections_dif_view in enumerate(tqdm(detections_multi)):
                 if view_num != view_index:
-                    matches_dif, unmatched_tracks_dif, unmatched_detections_dif, statistics_dif = self._match(detections_dif_view) ##get the permutation matrix
+                    matches_dif, unmatched_tracks_dif, unmatched_detections_dif, statistics_dif = self._match(detections_dif_view, True) ##get the permutation matrix
                     for track_idx, detection_idx in matches_dif:
                         ## if matched_ids from different view is in unmatched_ids at current view
                         if track_idx in unmatched_tracks:
-                            print("Applying Multi-view matching...")
+                            print("Applying Multi-view matching...\n")
                             self.tracks[track_idx].update(detections_dif_view[detection_idx], detection_idx, shot, True) ##here perform matching with differnt view
-                            print(matches)
+                            print("original match:", matches)
                             matches.append([track_idx,detection_idx]) ##add the track_ids to matches
+                            print("after association match:", matches)
                             unmatched_tracks.remove(track_idx)
                             if detection_idx in unmatched_detections:
                                 unmatched_detections.remove(detection_idx)
@@ -146,7 +147,7 @@ class Tracker:
         return matches
         
 
-    def _match(self, detections):
+    def _match(self, detections, multi_view_eval):
 
         def gated_metric(tracks, dets, track_indices, detection_indices):
             appe_emb          = np.array([dets[i].detection_data['appe'] for i in detection_indices])
@@ -154,6 +155,8 @@ class Tracker:
             pose_emb          = np.array([dets[i].detection_data['pose'] for i in detection_indices])
             uv_maps           = np.array([dets[i].detection_data['uv'] for i in detection_indices])
             targets           = np.array([tracks[i].track_id for i in track_indices])
+            if multi_view_eval:
+                self.opt.multi_view_eval = True
             cost_matrix       = self.metric.distance([appe_emb, loca_emb, pose_emb, uv_maps], targets, dims=[self.A_dim, self.P_dim, self.L_dim], phalp_tracker=self.phalp_tracker)
 
             return cost_matrix

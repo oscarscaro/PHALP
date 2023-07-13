@@ -306,6 +306,7 @@ class options():
         self.parser.add_argument('--multi_view', type=str2bool, nargs='?', const=True, default=True)
         self.parser.add_argument('--num_views', type=int, default=2)
         self.parser.add_argument('--test_video_id', type=str)
+        self.parser.add_argument('--multi_view_evaluation', type=str2bool, nargs='?', const=True, default=False)
     
     def parse(self):
         self.opt          = self.parser.parse_args()

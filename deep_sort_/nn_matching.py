@@ -85,7 +85,10 @@ def _pdist(opt, a, b, dims, phalp_tracker):
     if(opt.distance_type=="EQ_010"):  
         betas     = [3.8303, 1.5207, 0.4930, 4.5831]; c=1
         pose_distance[pose_distance>1.2] = 1.2
-        if(opt.shot==1): 
+
+        ### Multi-eval set up ###
+        if(opt.shot==1 or opt.multi_view_evaluation): 
+            print("multi_view_evaluation detected, changing the weights of apperance and detection....")
             # For best performance under the shot change scenario
             # you can set look_back to 20.
             betas           = [7.8303, 1.5207, 1e100, 1e100]; c=1    
