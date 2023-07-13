@@ -146,10 +146,12 @@ class HMAR(nn.Module):
             pred_cam_t[:, :2] += torch.tensor(center-img_size/2., dtype=dtype, device=self.device) * pred_cam_t[:, [2]] / focal_length
 
         # initialize camera params and mesh faces for NMR
+        ### 小孔成像，光心的
+        ### K: 内参
         K = torch.eye(3, device='cuda')
         K[0, 0] = K[1, 1]  = self.cfg.EXTRA.FOCAL_LENGTH
         K[2, 2] = 1
-        K[1, 2] = K[0, 2]  = img_size/2.0
+        K[1, 2] = K[0, 2]  = img_size/2.0 
                                       
                                       
         K = K.unsqueeze(0).repeat(batch_size, 1, 1)  # to BS
@@ -192,6 +194,8 @@ class HMAR(nn.Module):
                     texture_vert = texture_vert.view(texture_vert.size(0), -1, self.F, self.T, self.T).permute(0, 2, 3, 4, 1).contiguous()
                     texture      = texture_vert.unsqueeze(4).expand(-1, -1, -1, -1, 6, -1) 
 
+
+                ## 3D-> 2D
                 rgb_from_pred, depth, mask = self.nmr_renderer(verts.cuda(), face_tensor.int().cuda(), textures=texture, K=K, R=R, t=t, dist_coeffs=torch.tensor([[0., 0., 0., 0., 0.]], device=self.device))
                 loc_3 = rgb_from_pred<-10
                 predicted_depth            = depth

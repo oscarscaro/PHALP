@@ -125,6 +125,8 @@ def test_tracker(opt, phalp_tracker_multi):
                     if bbox[2]-bbox[0]<50 or bbox[3]-bbox[1]<100: continue
                     ## return all the necessary feature (pose, appe, etc.) given the bounding box and masks. 
                     detection_data = phalp_tracker_multi[view_index].get_human_apl(image_frame_element.image_frame, mask, bbox, score, [main_path_to_frames, frame_name], mask_name, t_, image_frame_element.measurments, gt_id)
+                    ## TODO: Detectin added in information KRT. 
+                    ## Detection view i to view j, input: two detection. Source KRT and target KRT.
                     detections.append(Detection(detection_data))
                 detection_data_multi.append(detections)
 
