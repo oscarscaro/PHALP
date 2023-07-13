@@ -87,7 +87,7 @@ def _pdist(opt, a, b, dims, phalp_tracker):
         pose_distance[pose_distance>1.2] = 1.2
 
         ### Multi-eval set up ###
-        if(opt.shot==1 or opt.multi_view_evaluation): 
+        if(opt.shot==1 or opt.multi_view_eval): 
             print("multi_view_evaluation detected, changing the weights of apperance and detection....")
             # For best performance under the shot change scenario
             # you can set look_back to 20.
