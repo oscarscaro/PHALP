@@ -23,7 +23,7 @@ warnings.filterwarnings('ignore')
 def test_tracker(opt, phalp_tracker: PHALP_tracker):
     
     eval_keys       = ['tracked_ids', 'tracked_bbox', 'tid', 'bbox', 'tracked_time']
-    history_keys    = ['appe', 'loca', 'pose', 'uv'] if opt.render else []
+    history_keys    = ['appe', 'loca', 'pose', 'uv', ''] if opt.render else [] 
     prediction_keys = ['prediction_uv', 'prediction_pose', 'prediction_loca'] if opt.render else []
     extra_keys_1    = ['center', 'scale', 'size', 'img_path', 'img_name', 'mask_name', 'conf']
     extra_keys_2    = ['smpl', '3d_joints', 'camera', 'embedding']

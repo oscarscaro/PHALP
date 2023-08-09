@@ -97,13 +97,14 @@ class Tracker:
         for track_idx, detection_idx in matches:
             self.tracks[track_idx].update(detections[detection_idx], detection_idx, shot) ##here perform matching
             
-            
+        ### IMPORTANT ###
         #### Multi-view Matching Implementation #### 
         if multi_view_bool:
             for view_num, detections_dif_view in enumerate(tqdm(detections_multi)):
                 if view_num != view_index:
-                    matches_dif, unmatched_tracks_dif, unmatched_detections_dif, statistics_dif = self._match(detections_dif_view, True) ##get the permutation matrix
-                    for track_idx, detection_idx in matches_dif:
+                    matches_dif, unmatched_tracks_dif, unmatched_detections_dif = self._match_multi(detections_dif_view) ##get the permutation matrix
+                    
+                    for track_idx, detection_idx in matches_dif.items():
                         ## if matched_ids from different view is in unmatched_ids at current view
                         if track_idx in unmatched_tracks:
                             print("Applying Multi-view matching...\n")
@@ -146,6 +147,63 @@ class Tracker:
         
         return matches
         
+
+    def _match_multi(self, detections):
+        print("Multi_view_evaluating...")
+
+        def l2_norm_matrix(matrixA, matrixB):
+            # Check if the matrices have identical dimensions
+            if matrixA.shape != matrixB.shape:
+                raise ValueError("Two matrices must have identical dimensions.")
+            
+            # Stack the columns of A and B to form vectors
+            a = matrixA.flatten()
+            b = matrixB.flatten()
+            
+            # Calculate the L2 norm between the two vectors
+            l2_norm = np.linalg.norm(a - b)
+            
+            return l2_norm
+        
+        def match_poses_binary(list_smpl_1, list_smpl_2):
+            matched_smpl_pairs = {}  # Dictionary to store matched pairs (index in list1: index in list2)
+            unmatched_indices_list_smpl_1 = []  # List to store indices of unmatched matrices from smpl_list1
+            unmatched_indices_list_smpl_2 = list(range(len(list_smpl_2)))  # List to store indices of unmatched matrices from smpl_list2
+            
+            for i, matrix1 in enumerate(list_smpl_1):
+                best_match_idx = None
+                min_l2_norm = float('inf')
+                
+                for j, idx in enumerate(unmatched_indices_list_smpl_2):
+                    matrix2 = list_smpl_2[idx]
+                    l2_norm = l2_norm_matrix(matrix1, matrix2)
+                    
+                    if l2_norm < min_l2_norm:
+                        min_l2_norm = l2_norm
+                        best_match_idx = j
+                
+                if best_match_idx is not None:
+                    # Store the best match and remove the matched index from unmatched_indices_list2
+                    matched_smpl_pairs[i] = unmatched_indices_list_smpl_2[best_match_idx]
+                    unmatched_indices_list_smpl_2.pop(best_match_idx)
+                else:
+                    # If no match was found, add the index from list1 to the unmatched_indices_list1
+                    unmatched_indices_list_smpl_1.append(i)
+            
+            return matched_smpl_pairs, unmatched_indices_list_smpl_1, unmatched_indices_list_smpl_2
+        
+        track_indices = np.arange(len(self.tracks))
+        smpl_tracks = np.array([self.tracks[i].track_data['prediction']['smpl']['body_pose']] for i in track_indices)
+        print("smpl_tracks: ", smpl_tracks[0:2])
+        detection_indices = np.arange(len(detections))
+        smpl_detection      = np.array([detections[i].detection_data['smpl']['body_pose'] for i in detection_indices])
+        print("smpl_detections: ", smpl_detection[0:2])
+
+        matched_smpl_pairs, unmatched_indices_list_smpl_1, unmatched_indices_list_smpl_2 = match_poses_binary(smpl_tracks,smpl_detection)
+
+        return matched_smpl_pairs, unmatched_indices_list_smpl_1, unmatched_indices_list_smpl_2
+
+
 
     def _match(self, detections, multi_view_eval=False):
 

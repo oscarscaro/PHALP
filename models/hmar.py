@@ -153,7 +153,7 @@ class HMAR(nn.Module):
         K[2, 2] = 1
         K[1, 2] = K[0, 2]  = img_size/2.0 
                                       
-                                      
+        
         K = K.unsqueeze(0).repeat(batch_size, 1, 1)  # to BS
         R = torch.eye(3, device='cuda').unsqueeze(0)
         t = torch.zeros(3, device='cuda').unsqueeze(0) 

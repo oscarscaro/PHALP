@@ -227,7 +227,7 @@ class PHALP_tracker(nn.Module):
             pred_smpl_params, pred_cam_x, _    = self.HMAR.smpl_head(pose_embedding.float()) ##SMPL_head is the decoder here to decod the embeddging
             pred_smpl_params                   = {k:v.cpu().numpy() for k,v in pred_smpl_params.items()}
 
-            ## PRED_SMPL_Params: beta (1x10 vector), theta: joint location. (24x3 vector, 24 joints, 3 rotations representation)
+            ## PRED_SMPL_Params: beta (1x10 vector), theta: joint location. (24x3 vector, 24 joints, 3 rotations representation) 
             ## TODO: Do this
             pred_joints_2d_ = pred_joints_2d.reshape(-1,)/self.opt.res
             pred_cam_       = pred_cam.view(-1,) ## This is the equivalent T (3x1), translation

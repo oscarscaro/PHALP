@@ -26,7 +26,7 @@ def test_tracker(opt, phalp_tracker_multi):
     prediction_keys = ['prediction_uv', 'prediction_pose', 'prediction_loca'] if opt.render else []
     extra_keys_1    = ['center', 'scale', 'size', 'img_path', 'img_name', 'mask_name', 'conf']
     extra_keys_2    = ['smpl', '3d_joints', 'camera', 'embedding']
-    history_keys    = history_keys + extra_keys_1 + extra_keys_2
+    history_keys    = history_keys + extra_keys_1 + extra_keys_2 ## Multi-view add on: SMPL keys
     visual_store_   = eval_keys + history_keys + prediction_keys
     tmp_keys_       = ['uv', 'prediction_uv', 'prediction_pose', 'prediction_loca']
     
@@ -124,6 +124,9 @@ def test_tracker(opt, phalp_tracker_multi):
                 for bbox, mask, score, mask_name, gt_id in zip(detections_element.pred_bbox, detections_element.pred_masks, detections_element.pred_scores, detections_element.mask_names, detections_element.gt):
                     if bbox[2]-bbox[0]<50 or bbox[3]-bbox[1]<100: continue
                     ## return all the necessary feature (pose, appe, etc.) given the bounding box and masks. 
+
+
+                    ## here get_human_apl is very important, for multi view we need to get apl after we have the rotation model
                     detection_data = phalp_tracker_multi[view_index].get_human_apl(image_frame_element.image_frame, mask, bbox, score, [main_path_to_frames, frame_name], mask_name, t_, image_frame_element.measurments, gt_id)
                     ## TODO: Detectin added in information KRT. 
                     ## Detection view i to view j, input: two detection. Source KRT and target KRT.
