@@ -15,7 +15,6 @@ from deep_sort_.tracker import Tracker
 
 from utils.make_video import render_frame_main_online
 from utils.utils import FrameExtractor, str2bool
-from pytube import YouTube
 
 warnings.filterwarnings('ignore')
   
@@ -188,6 +187,7 @@ class options():
         self.parser.add_argument('--start_frame', type=int, default='1000')
         self.parser.add_argument('--end_frame', type=int, default='1100')
         self.parser.add_argument('--store_extra_info', type=str2bool, nargs='?', const=True, default=False)
+        self.parser.add_argument('--test_video_id', type=str)
     
     def parse(self):
         self.opt          = self.parser.parse_args()
@@ -226,11 +226,11 @@ if __name__ == '__main__':
     elif(opt.track_dataset=='test'):   
         video    = opt.test_video_id #"multi_view_test1"
 
-        os.system("rm -rf " + "_DEMO/" + video)
-        os.makedirs("_DEMO/" + video, exist_ok=True)    
-        os.makedirs("_DEMO/" + video + "/img", exist_ok=True)    
+        #os.system("rm -rf " + "_DEMO/" + video)
+        # os.makedirs("_DEMO/" + video, exist_ok=True)    
+        # os.makedirs("_DEMO/" + video + "/img", exist_ok=True)    
 
-        fe = FrameExtractor("_DEMO/" + video + f"/{video}_{1}.mp4")
+        fe = FrameExtractor("_DEMO" + video + f"/{video}_{1}.mp4")
         print('Number of frames', fe.n_frames)
         fe.extract_frames(every_x_frame=1, img_name='', dest_path= "_DEMO/" + video + f"/{1}" + "/img/", start_frame=480, end_frame=600)
 
@@ -239,5 +239,3 @@ if __name__ == '__main__':
         opt.sample          =  '/img/'
         test_tracker(opt, phalp_tracker)
 
-
-            
